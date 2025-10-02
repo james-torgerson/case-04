@@ -85,7 +85,7 @@
       };
 
       try {
-        const res = await fetch("http://localhost:5000", {
+        const res = await fetch("https://ood.hpc.virginia.edu/rnode/torgenator/20659/proxy/5000/v1/survey", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
