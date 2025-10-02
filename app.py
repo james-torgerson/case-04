@@ -40,7 +40,7 @@ def submit_survey():
 
     # create submission ID
     hour_stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H")
-    submission_id = submission.submission_id or sha256_hash(email_normalized + hour_stamp)
+    submission_id = submission.submission_id or hash_string(email_normalized + hour_stamp)
 
     record = StoredSurveyRecord(
         name=submission.name,
