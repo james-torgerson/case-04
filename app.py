@@ -34,12 +34,13 @@ def submit_survey():
         return jsonify({"error": "validation_error", "detail": ve.errors()}), 422
 
     # hash PII
-    email_hash = hash_string(submission.email.strip().lower())
+    email_normalized = submission.email.strip().lower()
+    email_hash = hash_string(email_normalized)
     age_hash = hash_string(str(submission.age))
 
     # create submission ID
     hour_stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H")
-    submission_id = submission.submission_id or sha256_hash(submission.email.strip().lower() + hour_stamp)
+    submission_id = submission.submission_id or sha256_hash(email_normalized + hour_stamp)
 
     record = StoredSurveyRecord(
         name=submission.name,
