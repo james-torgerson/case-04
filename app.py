@@ -27,48 +27,29 @@ def submit_survey():
     payload = request.get_json(silent=True)
     if payload is None:
         return jsonify({"error": "invalid_json", "detail": "Body must be application/json"}), 400
-
-    original_email = payload.get('email', '') 
-
-    # hashing PII
-    if 'email' in payload and payload['email']:
-        hashed_email = hash_string(payload['email'])
-        payload['email_hash'] = hashed_email
-        del payload['email']
-    
-    if 'age' in payload and payload['age'] is not None:
-        try:
-            # Convert age to a string before hashing
-            age_str = str(payload['age']) 
-            
-            hashed_age = hash_string(age_str)
-            payload['age_hash'] = hashed_age # New field name for the hash
-            del payload['age'] # Remove the original integer value
-        except Exception:
-            # Optionally log an error if age couldn't be processed, 
-            # but allow Pydantic to handle remaining validation errors.
-            pass
-
-    # Creating submission_id
-    if not payload.get('submission_id'):
         
-        time_format = datetime.now(timezone.utc).strftime("%Y%m%d%H")
-        
-        if original_email:
-            unique_string = original_email + time_format
-            computed_id = hash_string(unique_string)
-            payload['submission_id'] = computed_id
-        else:
-            # Handle case where no email was provided (e.g., generate based on IP/time)
-            payload['submission_id'] = hash_string(time_format + "NO_EMAIL")
-
     try:
         submission = SurveySubmission(**payload)
     except ValidationError as ve:
         return jsonify({"error": "validation_error", "detail": ve.errors()}), 422
 
+    # hash PII
+    email_hash = hash_string(submission.email.strip().lower())
+    age_hash = hash_string(str(submission.age))
+
+    # create submission ID
+    hour_stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H")
+    submission_id = submission.submission_id or sha256_hash(submission.email.strip().lower() + hour_stamp)
+
     record = StoredSurveyRecord(
-        **submission.dict(),
+        name=submission.name,
+        email=email_hash,
+        age=age_hash,
+        consent=submission.consent,
+        rating=submission.rating
+        comments
+        user_agent
+        submission_id=submission_id
         received_at=datetime.now(timezone.utc),
         ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")
     )
